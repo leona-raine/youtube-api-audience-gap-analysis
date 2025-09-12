@@ -1,4 +1,4 @@
-## niche audience gap analysis using youtube api
+# niche audience gap analysis using youtube api
 
 data analysis upon yt trends of huge audience gap between large and small creators
 
