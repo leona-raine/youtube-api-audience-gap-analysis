@@ -1,0 +1,12 @@
+# for enforcing Linux and macOS line ends
+*.py text eol=lf
+*.ipynb text eol=lf
+*.csv text eol=lf
+*.md text eol=lf
+
+# binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
