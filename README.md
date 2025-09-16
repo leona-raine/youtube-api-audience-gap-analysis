@@ -4,3 +4,4 @@
 - real-time data
 - filtered niche with visualization that shows the audience gap between yt videos and creators
 - objective: filter search engine and dashboard deployment data visualization.
+- problem: scalability. slow fetch API calls
