@@ -1,3 +1,9 @@
+# INSTRUCTION:
+# 
+# Input keyword and the appropriate year (2007 and up)
+#
+#  ----------------------------------------------------------------
+#
 # for data collection and extraction
 from googleapiclient.discovery import build
 import pandas as pd
@@ -86,22 +92,26 @@ def collect_keyword(keyword, start_year, max_results=100):
     return df
 
 # saving csv and overwriting existing .csv file
-def save_to_csv(df, keyword):
-    filename = f"{keyword}_stats.csv"
+def save_to_csv(df, keyword, start_year):
+    folder = os.path.join("storage", "raw")
+    os.makedirs(folder, exist_ok=True)
 
-    existing_files = [f for f in os.listdir() if f.endswith("_stats.csv")]
-    if existing_files:
-        print(f"Found existing file: {existing_files[0]}")
-        confirm = input("Do you want to replace it? (y/n): ").strip().lower()
+    filename = f"{keyword}_{start_year}_stats.csv"
+    filepath = os.path.join(folder, filename)
+
+    # Only check THIS file
+    if os.path.exists(filepath):
+        confirm = input(f"File '{filename}' already exists in {folder}. Replace it? (y/n): ").strip().lower()
         if confirm != "y":
             print("Save cancelled.")
             return
         else:
-            os.remove(existing_files[0])
-            print(f"Deleted {existing_files[0]}")
+            os.remove(filepath)
+            print(f"Deleted old file: {filename}")
 
-    df.to_csv(filename, index=False)
-    print(f"Saved new file as {filename}")
+    # Always save in storage/raw
+    df.to_csv(filepath, index=False)
+    print(f"✅ Saved new file as {filepath}")
 
 # Main execution on py file
 if __name__ == "__main__":
@@ -123,7 +133,6 @@ if __name__ == "__main__":
         try:
             df = collect_keyword(keyword, start_year=start_year, max_results=100) # change max results if needed (max. 100)
             print(df.describe()) # change peek-data info if needed
-            save_to_csv(df, keyword) # save csv/overwrite csv
+            save_to_csv(df, keyword, start_year) # save csv/overwrite csv
         except ValueError as e:
             print(f"Error: {e}")
-        
