@@ -7,7 +7,6 @@
 # for data collection and extraction
 from googleapiclient.discovery import build
 import pandas as pd
-import time
 import os
 import datetime
 from dotenv import load_dotenv
