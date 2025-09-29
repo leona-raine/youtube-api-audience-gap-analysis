@@ -1,15 +1,11 @@
-# INSTRUCTION:
-# 
-# Input keyword and the appropriate year (2007 and up)
-#
-#  ----------------------------------------------------------------
-#
 # for data collection and extraction
 from googleapiclient.discovery import build
 import pandas as pd
 import os
 import datetime
+import psycopg2
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 
 load_dotenv()
 api_key = os.getenv("YOUTUBE_API_KEY")
@@ -22,18 +18,21 @@ youtube = get_youtube_client()
 # fetch api multiple yt vid stats simultaneously
 def get_vid_stats_batch(video_ids):
     req = youtube.videos().list(
-        part="statistics",
+        part="snippet,statistics",
         id=",".join(video_ids)
     )
     response = req.execute()
     data = []
     for item in response["items"]:
         stats = item["statistics"]
+        snippet = item["snippet"]
         data.append({
             "video_id": item["id"],
             "views": int(stats.get("viewCount", 0)),
             "likes": int(stats.get("likeCount", 0)),
-            "comments": int(stats.get("commentCount", 0))
+            "comments": int(stats.get("commentCount", 0)),
+            "published_at": snippet.get("publishedAt"),
+            "collected_at": datetime.datetime.now()
         })
     return data
 
@@ -75,63 +74,22 @@ def search_videos(keyword, start_year, max_results=100):
 # date year correction
 def validate_year(year: int) -> bool:
     current_year = datetime.datetime.now().year
-    if year < 2005:
-        return False
-    if year > current_year:
-        return False
-    return True
+    return 2005 <= year <= current_year
 
 # data stats collection + engagement rate
 def collect_keyword(keyword, start_year, max_results=100):
-    print(f"Collecting numeric stats for: {keyword}'...")
+    print(f"Collecting numeric stats for: {keyword} ({start_year})'...")
     df = search_videos(keyword, start_year=start_year, max_results=max_results)
     df["keyword"] = keyword
     # feature engineering for quick inspection
     df["engagement_rate"] = (df["likes"] + df["comments"]) / df["views"].replace(0, 1) 
     return df
 
-# saving csv and overwriting existing .csv file
-def save_to_csv(df, keyword, start_year):
-    folder = os.path.join("storage", "raw")
-    os.makedirs(folder, exist_ok=True)
-
-    filename = f"{keyword}_{start_year}_stats.csv"
-    filepath = os.path.join(folder, filename)
-
-    # Only check THIS file
-    if os.path.exists(filepath):
-        confirm = input(f"File '{filename}' already exists in {folder}. Replace it? (y/n): ").strip().lower()
-        if confirm != "y":
-            print("Save cancelled.")
-            return
-        else:
-            os.remove(filepath)
-            print(f"Deleted old file: {filename}")
-
-    # Always save in storage/raw
-    df.to_csv(filepath, index=False)
-    print(f"✅ Saved new file as {filepath}")
-
-# Main execution on py file
-if __name__ == "__main__":
-    # User input
-    while True:
-        keyword = input("Enter niche keyword (or press Enter if you wish to exit or overwrite your previous keyword): ").strip()
-        if keyword == "":
-            print("Existing program.")
-            break
-        start_year_str = input("Enter start year (YYYY): ")
-        if not start_year_str.isdigit():
-            print("Please enter a valid year (numbers only).")
-            continue
-        start_year = int(start_year_str)
-        if not validate_year(start_year):
-            print(f"Invalid year: {start_year}. Must be between 2005 and {datetime.datetime.now().year}.")
-            continue
-
-        try:
-            df = collect_keyword(keyword, start_year=start_year, max_results=100) # change max results if needed (max. 100)
-            print(df.describe()) # change peek-data info if needed
-            save_to_csv(df, keyword, start_year) # save csv/overwrite csv
-        except ValueError as e:
-            print(f"Error: {e}")
+# saving data to db
+def save_to_db(df, db_url, table_name="video_stats"):
+    """
+    Save DataFrame to PostgreSQL database.
+    """
+    engine = create_engine(db_url)
+    df.to_sql(table_name, engine, if_exists="append", index=False)
+    print(f"Saved {len(df)} rows to table '{table_name}'")

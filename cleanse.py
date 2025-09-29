@@ -3,10 +3,8 @@
 # wrangling is present before extraction
 # 
 import pandas as pd
-import os
 
-def clean_yt_data(input_file, min_views=50):
-    df = pd.read_csv(input_file)
+def clean_yt_data(df, min_views=50):
     df = df.drop_duplicates(subset="video_id") # 1: drop duplicates
     if min_views > 0:
         df = df[df["views"] >= min_views] # 2: filter out very low-view video counts
