@@ -1,3 +1,10 @@
+# Overview
+- Extracted and analyzed YouTube channel and video data using YouTube Data API v3, improving insights into audience engagement metrics.
+- Developed a scoring algorithm in Python with Pandas/NumPy to identify content gaps by comparing audience demand with creator supply.
+- Created interactive visualizations in Matplotlib to highlight trends and growth opportunities for creators.
+
+Tech stack: Python, Pandas, NumPy, Youtube Data API v3, Maplotlib, Plotly, Jupyter Notebook
+
 # niche audience gap analysis using youtube api
 
 - youtube api extraction
